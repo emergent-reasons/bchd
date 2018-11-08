@@ -614,18 +614,6 @@ func loadConfig() (*config, []string, error) {
 		os.Exit(0)
 	}
 
-	// Initialize log rotation.  After log rotation has been initialized, the
-	// logger variables may be used.
-	initLogRotator(filepath.Join(cfg.LogDir, defaultLogFilename))
-
-	// Parse, validate, and set debug log level(s).
-	if err := parseAndSetDebugLevels(cfg.DebugLevel); err != nil {
-		err := fmt.Errorf("%s: %v", funcName, err.Error())
-		fmt.Fprintln(os.Stderr, err)
-		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
-	}
-
 	// Validate database type.
 	if !validDbType(cfg.DbType) {
 		str := "%s: The specified database type [%v] is invalid -- " +

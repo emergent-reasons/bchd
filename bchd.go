@@ -42,18 +42,26 @@ var winServiceMain func() (bool, error)
 // notified with the server once it is setup so it can gracefully stop it when
 // requested from the service control manager.
 func bchdMain(serverChan chan<- *server) error {
-	// Load configuration and parse command line.  This function also
-	// initializes logging and configures it accordingly.
+	// Load configuration and parse command line.
 	tcfg, _, err := loadConfig()
 	if err != nil {
 		return err
 	}
 	cfg = tcfg
+
+	// Initialize log rotation.  After log rotation has been initialized, the
+	// logger variables may be used.
+	initLogRotator(filepath.Join(cfg.LogDir, defaultLogFilename))
 	defer func() {
 		if logRotator != nil {
 			logRotator.Close()
 		}
 	}()
+
+	// Parse, validate, and set debug log level(s).
+	if err := parseAndSetDebugLevels(cfg.DebugLevel); err != nil {
+		return fmt.Errorf("error initializing logging: %v", err.Error())
+	}
 
 	// Get a channel that will be closed when a shutdown signal has been
 	// triggered either from an OS signal such as SIGINT (Ctrl+C) or from
