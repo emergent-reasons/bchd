@@ -1137,14 +1137,14 @@ func bchdDial(addr net.Addr) (net.Conn, error) {
 	return cfg.dial(addr.Network(), addr.String(), defaultConnectTimeout)
 }
 
-// bchdLookup resolves the IP of the given host using the correct DNS lookup
+// BchdLookup resolves the IP of the given host using the correct DNS lookup
 // function depending on the configuration options.  For example, addresses will
 // be resolved using tor when the --proxy flag was specified unless --noonion
 // was also specified in which case the normal system DNS resolver will be used.
 //
 // Any attempt to resolve a tor address (.onion) will return an error since they
 // are not intended to be resolved outside of the tor proxy.
-func bchdLookup(host string) ([]net.IP, error) {
+func (cfg *config) BchdLookup(host string) ([]net.IP, error) {
 	if strings.HasSuffix(host, ".onion") {
 		return nil, fmt.Errorf("attempt to resolve tor address %s", host)
 	}
