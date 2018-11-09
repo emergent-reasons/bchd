@@ -11,7 +11,7 @@ import (
 
 // activeNetParams is a pointer to the parameters specific to the
 // currently active bitcoin network.
-var activeNetParams = &mainNetParams
+var netParams = &mainNetParams
 
 // params is used to group parameters for various networks such as the main
 // network and test networks.

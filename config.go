@@ -412,7 +412,7 @@ func newConfigParser(cfg *config, so *serviceOptions, options flags.Options) *fl
 // The above results in bchd functioning properly without any config settings
 // while still allowing the user to override settings with config files and
 // command line options.  Command line options always take precedence.
-func loadConfig() (*config, []string, error) {
+func loadConfig() (*config, []string, *params, error) {
 	// Default config.
 	cfg := config{
 		ConfigFile:              defaultConfigFile,
@@ -458,7 +458,7 @@ func loadConfig() (*config, []string, error) {
 	if err != nil {
 		if e, ok := err.(*flags.Error); ok && e.Type == flags.ErrHelp {
 			fmt.Fprintln(os.Stderr, err)
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 	}
 
@@ -502,7 +502,7 @@ func loadConfig() (*config, []string, error) {
 				fmt.Fprintf(os.Stderr, "Error parsing config "+
 					"file: %v\n", err)
 				fmt.Fprintln(os.Stderr, usageMessage)
-				return nil, nil, err
+				return nil, nil, nil, err
 			}
 			configFileError = err
 		}
@@ -519,7 +519,7 @@ func loadConfig() (*config, []string, error) {
 		if e, ok := err.(*flags.Error); !ok || e.Type != flags.ErrHelp {
 			fmt.Fprintln(os.Stderr, usageMessage)
 		}
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// Create the home directory if it doesn't already exist.
@@ -539,7 +539,7 @@ func loadConfig() (*config, []string, error) {
 		str := "%s: Failed to create home directory: %v"
 		err := fmt.Errorf(str, funcName, err)
 		fmt.Fprintln(os.Stderr, err)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// Multiple networks can't be selected simultaneously.
@@ -548,21 +548,21 @@ func loadConfig() (*config, []string, error) {
 	// while we're at it
 	if cfg.TestNet3 {
 		numNets++
-		activeNetParams = &testNet3Params
+		netParams = &testNet3Params
 	}
 	if cfg.RegressionTest {
 		numNets++
-		activeNetParams = &regressionNetParams
+		netParams = &regressionNetParams
 	}
 	if cfg.SimNet {
 		numNets++
 		// Also disable dns seeding on the simulation test network.
-		activeNetParams = &simNetParams
+		netParams = &simNetParams
 		cfg.DisableDNSSeed = true
 	}
 	if cfg.TestNet1 {
 		numNets++
-		activeNetParams = &testNet1Params
+		netParams = &testNet1Params
 		cfg.DisableDNSSeed = true
 	}
 	if numNets > 1 {
@@ -571,22 +571,21 @@ func loadConfig() (*config, []string, error) {
 		err := fmt.Errorf(str, funcName)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// Set the default policy for relaying non-standard transactions
 	// according to the default of the active network. The set
 	// configuration value takes precedence over the default value for the
 	// selected network.
-	relayNonStd := activeNetParams.RelayNonStdTxs
+	relayNonStd := netParams.RelayNonStdTxs
 	switch {
 	case cfg.RelayNonStd && cfg.RejectNonStd:
 		str := "%s: rejectnonstd and relaynonstd cannot be used " +
 			"together -- choose only one"
 		err := fmt.Errorf(str, funcName)
 		fmt.Fprintln(os.Stderr, err)
-		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+		return nil, nil, nil, err
 	case cfg.RejectNonStd:
 		relayNonStd = false
 	case cfg.RelayNonStd:
@@ -601,12 +600,12 @@ func loadConfig() (*config, []string, error) {
 	// means each individual piece of serialized data does not have to
 	// worry about changing names per network and such.
 	cfg.DataDir = cleanAndExpandPath(cfg.DataDir)
-	cfg.DataDir = filepath.Join(cfg.DataDir, netName(activeNetParams))
+	cfg.DataDir = filepath.Join(cfg.DataDir, netName(netParams))
 
 	// Append the network type to the log directory so it is "namespaced"
 	// per network in the same fashion as the data directory.
 	cfg.LogDir = cleanAndExpandPath(cfg.LogDir)
-	cfg.LogDir = filepath.Join(cfg.LogDir, netName(activeNetParams))
+	cfg.LogDir = filepath.Join(cfg.LogDir, netName(netParams))
 
 	// Special show command to list supported subsystems and exit.
 	if cfg.DebugLevel == "show" {
@@ -621,7 +620,7 @@ func loadConfig() (*config, []string, error) {
 		err := fmt.Errorf(str, funcName, cfg.DbType, knownDbTypes)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// Validate profile port number
@@ -632,7 +631,7 @@ func loadConfig() (*config, []string, error) {
 			err := fmt.Errorf(str, funcName)
 			fmt.Fprintln(os.Stderr, err)
 			fmt.Fprintln(os.Stderr, usageMessage)
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 	}
 
@@ -642,7 +641,7 @@ func loadConfig() (*config, []string, error) {
 		err := fmt.Errorf(str, funcName, cfg.BanDuration)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// Validate any given whitelisted IP addresses and networks.
@@ -659,7 +658,7 @@ func loadConfig() (*config, []string, error) {
 					err = fmt.Errorf(str, funcName, addr)
 					fmt.Fprintln(os.Stderr, err)
 					fmt.Fprintln(os.Stderr, usageMessage)
-					return nil, nil, err
+					return nil, nil, nil, err
 				}
 				var bits int
 				if ip.To4() == nil {
@@ -684,7 +683,7 @@ func loadConfig() (*config, []string, error) {
 		err := fmt.Errorf(str, funcName)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// --proxy or --connect without --listen disables listening.
@@ -703,7 +702,7 @@ func loadConfig() (*config, []string, error) {
 	// we are to connect to.
 	if len(cfg.Listeners) == 0 {
 		cfg.Listeners = []string{
-			net.JoinHostPort("", activeNetParams.DefaultPort),
+			net.JoinHostPort("", netParams.DefaultPort),
 		}
 	}
 
@@ -714,7 +713,7 @@ func loadConfig() (*config, []string, error) {
 		err := fmt.Errorf(str, funcName)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// Check to make sure limited and admin users don't have the same password
@@ -724,7 +723,7 @@ func loadConfig() (*config, []string, error) {
 		err := fmt.Errorf(str, funcName)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// The RPC server is disabled if no username or password is provided.
@@ -741,11 +740,11 @@ func loadConfig() (*config, []string, error) {
 	if !cfg.DisableRPC && len(cfg.RPCListeners) == 0 {
 		addrs, err := net.LookupHost("localhost")
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 		cfg.RPCListeners = make([]string, 0, len(addrs))
 		for _, addr := range addrs {
-			addr = net.JoinHostPort(addr, activeNetParams.rpcPort)
+			addr = net.JoinHostPort(addr, netParams.rpcPort)
 			cfg.RPCListeners = append(cfg.RPCListeners, addr)
 		}
 	}
@@ -756,7 +755,7 @@ func loadConfig() (*config, []string, error) {
 		err := fmt.Errorf(str, funcName, cfg.RPCMaxConcurrentReqs)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// Validate the the minrelaytxfee.
@@ -766,7 +765,7 @@ func loadConfig() (*config, []string, error) {
 		err := fmt.Errorf(str, funcName, err)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// Limit the max block size to a sane value.
@@ -779,7 +778,7 @@ func loadConfig() (*config, []string, error) {
 			blockMaxSizeMax, cfg.BlockMaxSize)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// Limit the max orphan count to a sane vlue.
@@ -789,7 +788,7 @@ func loadConfig() (*config, []string, error) {
 		err := fmt.Errorf(str, funcName, cfg.MaxOrphanTxs)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// Excessive blocksize cannot be set less than the default but it can be higher.
@@ -807,7 +806,7 @@ func loadConfig() (*config, []string, error) {
 				funcName)
 			fmt.Fprintln(os.Stderr, err)
 			fmt.Fprintln(os.Stderr, usageMessage)
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 	}
 
@@ -818,7 +817,7 @@ func loadConfig() (*config, []string, error) {
 			funcName)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// --addrindex and --dropaddrindex do not mix.
@@ -828,7 +827,7 @@ func loadConfig() (*config, []string, error) {
 			funcName)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// --addrindex and --droptxindex do not mix.
@@ -840,26 +839,26 @@ func loadConfig() (*config, []string, error) {
 			funcName)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// Check mining addresses are valid and saved parsed versions.
 	cfg.miningAddrs = make([]bchutil.Address, 0, len(cfg.MiningAddrs))
 	for _, strAddr := range cfg.MiningAddrs {
-		addr, err := bchutil.DecodeAddress(strAddr, activeNetParams.Params)
+		addr, err := bchutil.DecodeAddress(strAddr, netParams.Params)
 		if err != nil {
 			str := "%s: mining address '%s' failed to decode: %v"
 			err := fmt.Errorf(str, funcName, strAddr, err)
 			fmt.Fprintln(os.Stderr, err)
 			fmt.Fprintln(os.Stderr, usageMessage)
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
-		if !addr.IsForNet(activeNetParams.Params) {
+		if !addr.IsForNet(netParams.Params) {
 			str := "%s: mining address '%s' is on the wrong network"
 			err := fmt.Errorf(str, funcName, strAddr)
 			fmt.Fprintln(os.Stderr, err)
 			fmt.Fprintln(os.Stderr, usageMessage)
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 		cfg.miningAddrs = append(cfg.miningAddrs, addr)
 	}
@@ -872,18 +871,18 @@ func loadConfig() (*config, []string, error) {
 		err := fmt.Errorf(str, funcName)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// Add default port to all listener addresses if needed and remove
 	// duplicate addresses.
 	cfg.Listeners = normalizeAddresses(cfg.Listeners,
-		activeNetParams.DefaultPort)
+		netParams.DefaultPort)
 
 	// Add default port to all rpc listener addresses if needed and remove
 	// duplicate addresses.
 	cfg.RPCListeners = normalizeAddresses(cfg.RPCListeners,
-		activeNetParams.rpcPort)
+		netParams.rpcPort)
 
 	// Only allow TLS to be disabled if the RPC is bound to localhost
 	// addresses.
@@ -901,7 +900,7 @@ func loadConfig() (*config, []string, error) {
 				err := fmt.Errorf(str, funcName, addr, err)
 				fmt.Fprintln(os.Stderr, err)
 				fmt.Fprintln(os.Stderr, usageMessage)
-				return nil, nil, err
+				return nil, nil, nil, err
 			}
 			if _, ok := allowedTLSListeners[host]; !ok {
 				str := "%s: the --notls option may not be used " +
@@ -910,7 +909,7 @@ func loadConfig() (*config, []string, error) {
 				err := fmt.Errorf(str, funcName, addr)
 				fmt.Fprintln(os.Stderr, err)
 				fmt.Fprintln(os.Stderr, usageMessage)
-				return nil, nil, err
+				return nil, nil, nil, err
 			}
 		}
 	}
@@ -918,9 +917,9 @@ func loadConfig() (*config, []string, error) {
 	// Add default port to all added peer addresses if needed and remove
 	// duplicate addresses.
 	cfg.AddPeers = normalizeAddresses(cfg.AddPeers,
-		activeNetParams.DefaultPort)
+		netParams.DefaultPort)
 	cfg.ConnectPeers = normalizeAddresses(cfg.ConnectPeers,
-		activeNetParams.DefaultPort)
+		netParams.DefaultPort)
 
 	// --noonion and --onion do not mix.
 	if cfg.NoOnion && cfg.OnionProxy != "" {
@@ -928,7 +927,7 @@ func loadConfig() (*config, []string, error) {
 			"not be activated at the same time", funcName)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// Check the checkpoints for syntax errors.
@@ -938,7 +937,7 @@ func loadConfig() (*config, []string, error) {
 		err := fmt.Errorf(str, funcName, err)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// Tor stream isolation requires either proxy or onion proxy to be set.
@@ -948,7 +947,7 @@ func loadConfig() (*config, []string, error) {
 		err := fmt.Errorf(str, funcName)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// Setup dial and DNS resolution (lookup) functions depending on the
@@ -966,7 +965,7 @@ func loadConfig() (*config, []string, error) {
 			err := fmt.Errorf(str, funcName, cfg.Proxy, err)
 			fmt.Fprintln(os.Stderr, err)
 			fmt.Fprintln(os.Stderr, usageMessage)
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 
 		// Tor isolation flag means proxy credentials will be overridden
@@ -1012,7 +1011,7 @@ func loadConfig() (*config, []string, error) {
 			err := fmt.Errorf(str, funcName, cfg.OnionProxy, err)
 			fmt.Fprintln(os.Stderr, err)
 			fmt.Fprintln(os.Stderr, usageMessage)
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 
 		// Tor isolation flag means onion proxy credentials will be
@@ -1062,7 +1061,7 @@ func loadConfig() (*config, []string, error) {
 		bchdLog.Warnf("%v", configFileError)
 	}
 
-	return &cfg, remainingArgs, nil
+	return &cfg, remainingArgs, netParams, nil
 }
 
 // createDefaultConfig copies the sample-bchd.conf content to the given destination path,

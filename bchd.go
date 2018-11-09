@@ -29,7 +29,8 @@ const (
 )
 
 var (
-	cfg *config
+	cfg             *config
+	activeNetParams *params
 )
 
 // winServiceMain is only invoked on Windows.  It detects when bchd is running
@@ -43,11 +44,12 @@ var winServiceMain func() (bool, error)
 // requested from the service control manager.
 func bchdMain(serverChan chan<- *server) error {
 	// Load configuration and parse command line.
-	tcfg, _, err := loadConfig()
+	tcfg, _, tempNetParams, err := loadConfig()
 	if err != nil {
 		return err
 	}
 	cfg = tcfg
+	activeNetParams = tempNetParams
 
 	// Initialize log rotation.  After log rotation has been initialized, the
 	// logger variables may be used.
