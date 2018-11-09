@@ -2752,7 +2752,7 @@ func newServer(listenAddrs []string, db database.DB, chainParams *chaincfg.Param
 	s.cpuMiner = cpuminer.New(&cpuminer.Config{
 		ChainParams:            chainParams,
 		BlockTemplateGenerator: blockTemplateGenerator,
-		MiningAddrs:            cfg.miningAddrs,
+		MiningAddrs:            cfg.MiningAddrs,
 		ProcessBlock:           s.syncManager.ProcessBlock,
 		ConnectedCount:         s.ConnectedCount,
 		IsCurrent:              s.syncManager.IsCurrent,

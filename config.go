@@ -158,28 +158,28 @@ type config struct {
 	TrickleInterval         time.Duration `long:"trickleinterval" description:"Minimum time between attempts to send new inventory to a connected peer"`
 	MaxOrphanTxs            int           `long:"maxorphantx" description:"Max number of orphan transactions to keep in memory"`
 	Generate                bool          `long:"generate" description:"Generate (mine) bitcoins using the CPU"`
-	MiningAddrs             []string      `long:"miningaddr" description:"Add the specified payment address to the list of addresses to use for generated blocks -- At least one address is required if the generate option is set"`
-	BlockMinSize            uint32        `long:"blockminsize" description:"Mininum block size in bytes to be used when creating a block"`
-	BlockMaxSize            uint32        `long:"blockmaxsize" description:"Maximum block size in bytes to be used when creating a block"`
-	BlockPrioritySize       uint32        `long:"blockprioritysize" description:"Size in bytes for high-priority/low-fee transactions when creating a block"`
-	UserAgentComments       []string      `long:"uacomment" description:"Comment to add to the user agent -- See BIP 14 for more information."`
-	NoPeerBloomFilters      bool          `long:"nopeerbloomfilters" description:"Disable bloom filtering support"`
-	NoCFilters              bool          `long:"nocfilters" description:"Disable committed filtering (CF) support"`
-	DropCfIndex             bool          `long:"dropcfindex" description:"Deletes the index used for committed filtering (CF) support from the database on start up and then exits."`
-	SigCacheMaxSize         uint          `long:"sigcachemaxsize" description:"The maximum number of entries in the signature verification cache"`
+	MiningAddrs             []bchutil.Address
+	MiningAddrsStr          []string `long:"miningaddr" description:"Add the specified payment address to the list of addresses to use for generated blocks -- At least one address is required if the generate option is set"`
+	BlockMinSize            uint32   `long:"blockminsize" description:"Mininum block size in bytes to be used when creating a block"`
+	BlockMaxSize            uint32   `long:"blockmaxsize" description:"Maximum block size in bytes to be used when creating a block"`
+	BlockPrioritySize       uint32   `long:"blockprioritysize" description:"Size in bytes for high-priority/low-fee transactions when creating a block"`
+	UserAgentComments       []string `long:"uacomment" description:"Comment to add to the user agent -- See BIP 14 for more information."`
+	NoPeerBloomFilters      bool     `long:"nopeerbloomfilters" description:"Disable bloom filtering support"`
+	NoCFilters              bool     `long:"nocfilters" description:"Disable committed filtering (CF) support"`
+	DropCfIndex             bool     `long:"dropcfindex" description:"Deletes the index used for committed filtering (CF) support from the database on start up and then exits."`
+	SigCacheMaxSize         uint     `long:"sigcachemaxsize" description:"The maximum number of entries in the signature verification cache"`
 	UtxoCacheMaxSizeMiB     uint          `long:"utxocachemaxsize" description:"The maximum size in MiB of the UTXO cache"`
-	BlocksOnly              bool          `long:"blocksonly" description:"Do not accept transactions from remote peers."`
-	TxIndex                 bool          `long:"txindex" description:"Maintain a full hash-based transaction index which makes all transactions available via the getrawtransaction RPC"`
-	DropTxIndex             bool          `long:"droptxindex" description:"Deletes the hash-based transaction index from the database on start up and then exits."`
-	AddrIndex               bool          `long:"addrindex" description:"Maintain a full address-based transaction index which makes the searchrawtransactions RPC available"`
-	DropAddrIndex           bool          `long:"dropaddrindex" description:"Deletes the address-based transaction index from the database on start up and then exits."`
-	RelayNonStd             bool          `long:"relaynonstd" description:"Relay non-standard transactions regardless of the default settings for the active network."`
-	RejectNonStd            bool          `long:"rejectnonstd" description:"Reject non-standard transactions regardless of the default settings for the active network."`
+	BlocksOnly              bool     `long:"blocksonly" description:"Do not accept transactions from remote peers."`
+	TxIndex                 bool     `long:"txindex" description:"Maintain a full hash-based transaction index which makes all transactions available via the getrawtransaction RPC"`
+	DropTxIndex             bool     `long:"droptxindex" description:"Deletes the hash-based transaction index from the database on start up and then exits."`
+	AddrIndex               bool     `long:"addrindex" description:"Maintain a full address-based transaction index which makes the searchrawtransactions RPC available"`
+	DropAddrIndex           bool     `long:"dropaddrindex" description:"Deletes the address-based transaction index from the database on start up and then exits."`
+	RelayNonStd             bool     `long:"relaynonstd" description:"Relay non-standard transactions regardless of the default settings for the active network."`
+	RejectNonStd            bool     `long:"rejectnonstd" description:"Reject non-standard transactions regardless of the default settings for the active network."`
 	lookup                  func(string) ([]net.IP, error)
 	oniondial               func(string, string, time.Duration) (net.Conn, error)
 	dial                    func(string, string, time.Duration) (net.Conn, error)
 	addCheckpoints          []chaincfg.Checkpoint
-	miningAddrs             []bchutil.Address
 	minRelayTxFee           bchutil.Amount
 	whitelists              []*net.IPNet
 }
@@ -843,8 +843,8 @@ func loadConfig() (*config, []string, *params, error) {
 	}
 
 	// Check mining addresses are valid and saved parsed versions.
-	cfg.miningAddrs = make([]bchutil.Address, 0, len(cfg.MiningAddrs))
-	for _, strAddr := range cfg.MiningAddrs {
+	cfg.MiningAddrs = make([]bchutil.Address, 0, len(cfg.MiningAddrsStr))
+	for _, strAddr := range cfg.MiningAddrsStr {
 		addr, err := bchutil.DecodeAddress(strAddr, netParams.Params)
 		if err != nil {
 			str := "%s: mining address '%s' failed to decode: %v"
@@ -860,7 +860,7 @@ func loadConfig() (*config, []string, *params, error) {
 			fmt.Fprintln(os.Stderr, usageMessage)
 			return nil, nil, nil, err
 		}
-		cfg.miningAddrs = append(cfg.miningAddrs, addr)
+		cfg.MiningAddrs = append(cfg.MiningAddrs, addr)
 	}
 
 	// Ensure there is at least one mining address when the generate flag is

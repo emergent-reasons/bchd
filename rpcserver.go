@@ -860,7 +860,7 @@ func handleEstimateFee(s *rpcServer, cmd interface{}, closeChan <-chan struct{})
 func handleGenerate(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	// Respond with an error if there are no addresses to pay the
 	// created blocks to.
-	if len(cfg.miningAddrs) == 0 {
+	if len(cfg.MiningAddrs) == 0 {
 		return nil, &btcjson.RPCError{
 			Code: btcjson.ErrRPCInternal.Code,
 			Message: "No payment addresses specified " +
@@ -1560,7 +1560,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *rpcServer, useCoinbaseValue bo
 		// to create their own coinbase.
 		var payAddr bchutil.Address
 		if !useCoinbaseValue {
-			payAddr = cfg.miningAddrs[rand.Intn(len(cfg.miningAddrs))]
+			payAddr = cfg.MiningAddrs[rand.Intn(len(cfg.MiningAddrs))]
 		}
 
 		// Create a new block template that has a coinbase which anyone
@@ -1615,7 +1615,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *rpcServer, useCoinbaseValue bo
 		// returned if none have been specified.
 		if !useCoinbaseValue && !template.ValidPayAddress {
 			// Choose a payment address at random.
-			payToAddr := cfg.miningAddrs[rand.Intn(len(cfg.miningAddrs))]
+			payToAddr := cfg.MiningAddrs[rand.Intn(len(cfg.MiningAddrs))]
 
 			// Update the block coinbase output of the template to
 			// pay to the randomly selected payment address.
@@ -1917,7 +1917,7 @@ func handleGetBlockTemplateRequest(s *rpcServer, request *btcjson.TemplateReques
 
 	// When a coinbase transaction has been requested, respond with an error
 	// if there are no addresses to pay the created block template to.
-	if !useCoinbaseValue && len(cfg.miningAddrs) == 0 {
+	if !useCoinbaseValue && len(cfg.MiningAddrs) == 0 {
 		return nil, &btcjson.RPCError{
 			Code: btcjson.ErrRPCInternal.Code,
 			Message: "A coinbase transaction has been requested, " +
@@ -3381,7 +3381,7 @@ func handleSetGenerate(s *rpcServer, cmd interface{}, closeChan <-chan struct{})
 	} else {
 		// Respond with an error if there are no addresses to pay the
 		// created blocks to.
-		if len(cfg.miningAddrs) == 0 {
+		if len(cfg.MiningAddrs) == 0 {
 			return nil, &btcjson.RPCError{
 				Code: btcjson.ErrRPCInternal.Code,
 				Message: "No payment addresses specified " +
