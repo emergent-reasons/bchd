@@ -152,7 +152,8 @@ type config struct {
 	DebugLevel              string        `short:"d" long:"debuglevel" description:"Logging level for all subsystems {trace, debug, info, warn, error, critical} -- You may also specify <subsystem>=<level>,<subsystem2>=<level>,... to set the log level for individual subsystems -- Use show to list available subsystems"`
 	Upnp                    bool          `long:"upnp" description:"Use UPnP to map our listening port outside of NAT"`
 	ExcessiveBlockSize      uint32        `long:"excessiveblocksize" description:"The maximum size block (in bytes) this node will accept. Cannot be less than 32000000."`
-	MinRelayTxFee           float64       `long:"minrelaytxfee" description:"The minimum transaction fee in BCH/kB to be considered a non-zero fee."`
+	MinRelayTxFeeBCH        float64       `long:"minrelaytxfee" description:"The minimum transaction fee in BCH/kB to be considered a non-zero fee."`
+	MinRelayTxFeeSats       bchutil.Amount
 	FreeTxRelayLimit        float64       `long:"limitfreerelay" description:"Limit relay of transactions with no transaction fee to the given amount in thousands of bytes per minute"`
 	NoRelayPriority         bool          `long:"norelaypriority" description:"Do not require free or low-fee transactions to have high priority for relaying"`
 	TrickleInterval         time.Duration `long:"trickleinterval" description:"Minimum time between attempts to send new inventory to a connected peer"`
@@ -180,7 +181,6 @@ type config struct {
 	oniondial               func(string, string, time.Duration) (net.Conn, error)
 	dial                    func(string, string, time.Duration) (net.Conn, error)
 	addCheckpoints          []chaincfg.Checkpoint
-	minRelayTxFee           bchutil.Amount
 	whitelists              []*net.IPNet
 }
 
@@ -431,7 +431,7 @@ func loadConfig() (*config, []string, *params, error) {
 		RPCKey:                  defaultRPCKeyFile,
 		RPCCert:                 defaultRPCCertFile,
 		ExcessiveBlockSize:      defaultExcessiveBlockSize,
-		MinRelayTxFee:           mempool.DefaultMinRelayTxFee.ToBCH(),
+		MinRelayTxFeeBCH:        mempool.DefaultMinRelayTxFee.ToBCH(),
 		FreeTxRelayLimit:        defaultFreeTxRelayLimit,
 		TrickleInterval:         defaultTrickleInterval,
 		BlockMinSize:            defaultBlockMinSize,
@@ -759,7 +759,7 @@ func loadConfig() (*config, []string, *params, error) {
 	}
 
 	// Validate the the minrelaytxfee.
-	cfg.minRelayTxFee, err = bchutil.NewAmount(cfg.MinRelayTxFee)
+	cfg.MinRelayTxFeeSats, err = bchutil.NewAmount(cfg.MinRelayTxFeeBCH)
 	if err != nil {
 		str := "%s: invalid minrelaytxfee: %v"
 		err := fmt.Errorf(str, funcName, err)

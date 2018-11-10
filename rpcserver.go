@@ -2301,7 +2301,7 @@ func handleGetInfo(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (in
 		Proxy:           cfg.Proxy,
 		Difficulty:      getDifficultyRatio(best.Bits, s.cfg.ChainParams),
 		TestNet:         cfg.TestNet3 || cfg.TestNet1,
-		RelayFee:        cfg.minRelayTxFee.ToBCH(),
+		RelayFee:        cfg.MinRelayTxFeeBCH,
 	}
 
 	return ret, nil

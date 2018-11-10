@@ -130,7 +130,7 @@ type Policy struct {
 	// a consensus rule.
 	MaxSigOpPerTx int
 
-	// MinRelayTxFee defines the minimum transaction fee in BCH/kB to be
+	// MinRelayTxFee defines the minimum transaction fee in satoshis/kB to be
 	// considered a non-zero fee.
 	MinRelayTxFee bchutil.Amount
 }

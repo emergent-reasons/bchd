@@ -2703,7 +2703,7 @@ func newServer(listenAddrs []string, db database.DB, chainParams *chaincfg.Param
 			MaxOrphanTxs:         cfg.MaxOrphanTxs,
 			MaxOrphanTxSize:      defaultMaxOrphanTxSize,
 			MaxSigOpPerTx:        blockchain.MaxTransactionSigOps,
-			MinRelayTxFee:        cfg.minRelayTxFee,
+			MinRelayTxFee:        cfg.MinRelayTxFeeSats,
 			MaxTxVersion:         2,
 		},
 		ChainParams:    chainParams,
@@ -2744,7 +2744,7 @@ func newServer(listenAddrs []string, db database.DB, chainParams *chaincfg.Param
 		BlockMinSize:      cfg.BlockMinSize,
 		BlockMaxSize:      cfg.BlockMaxSize,
 		BlockPrioritySize: cfg.BlockPrioritySize,
-		TxMinFreeFee:      cfg.minRelayTxFee,
+		TxMinFreeFee:      cfg.MinRelayTxFeeSats,
 	}
 	blockTemplateGenerator := mining.NewBlkTmplGenerator(&policy,
 		s.chainParams, s.txMemPool, s.chain, s.timeSource,
