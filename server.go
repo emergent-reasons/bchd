@@ -2644,7 +2644,7 @@ func newServer(listenAddrs []string, db database.DB, chainParams *chaincfg.Param
 	// Merge given checkpoints with the default ones unless they are disabled.
 	var checkpoints []chaincfg.Checkpoint
 	if !cfg.DisableCheckpoints {
-		checkpoints = mergeCheckpoints(s.chainParams.Checkpoints, cfg.addCheckpoints)
+		checkpoints = mergeCheckpoints(s.chainParams.Checkpoints, cfg.AddCheckpoints)
 	}
 
 	// Create a new block chain instance with the appropriate configuration.

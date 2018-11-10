@@ -6,8 +6,10 @@ package chaincfg
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"math/big"
+	"strconv"
 	"strings"
 	"time"
 
@@ -50,6 +52,49 @@ var (
 type Checkpoint struct {
 	Height int32
 	Hash   *chainhash.Hash
+}
+
+// newCheckpointFromStr parses checkpoints in the '<height>:<hash>' format.
+func newCheckpointFromStr(checkpoint string) (Checkpoint, error) {
+	parts := strings.Split(checkpoint, ":")
+	if len(parts) != 2 {
+		return Checkpoint{}, fmt.Errorf("unable to parse "+
+			"checkpoint %q -- use the syntax <height>:<hash>",
+			checkpoint)
+	}
+
+	height, err := strconv.ParseInt(parts[0], 10, 32)
+	if err != nil {
+		return Checkpoint{}, fmt.Errorf("unable to parse "+
+			"checkpoint %q due to malformed height", checkpoint)
+	}
+
+	if len(parts[1]) == 0 {
+		return Checkpoint{}, fmt.Errorf("unable to parse "+
+			"checkpoint %q due to missing hash", checkpoint)
+	}
+	hash, err := chainhash.NewHashFromStr(parts[1])
+	if err != nil {
+		return Checkpoint{}, fmt.Errorf("unable to parse "+
+			"checkpoint %q due to malformed hash", checkpoint)
+	}
+
+	return Checkpoint{
+		Height: int32(height),
+		Hash:   hash,
+	}, nil
+}
+
+// UnmarshalFlag checks a checkpoint string for valid syntax
+// ('<height>:<hash>') and parses it to a Checkpoint instance
+func (c *Checkpoint) UnmarshalFlag(value string) error {
+	temp, err := newCheckpointFromStr(value)
+	if err != nil {
+		return err
+	}
+	c.Height = temp.Height
+	c.Hash = temp.Hash
+	return nil
 }
 
 // DNSSeed identifies a DNS seed.
