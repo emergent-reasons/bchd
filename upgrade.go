@@ -5,6 +5,7 @@
 package main
 
 import (
+	"github.com/gcash/bchd/config"
 	"io"
 	"os"
 	"path/filepath"
@@ -109,7 +110,7 @@ func upgradeDBPaths() error {
 func upgradeDataPaths() error {
 	// No need to migrate if the old and new home paths are the same.
 	oldHomePath := oldBchdHomeDir()
-	newHomePath := DefaultHomeDir
+	newHomePath := config.DefaultHomeDir
 	if oldHomePath == newHomePath {
 		return nil
 	}
@@ -125,8 +126,8 @@ func upgradeDataPaths() error {
 		}
 
 		// Move old bchd.conf into new location if needed.
-		oldConfPath := filepath.Join(oldHomePath, DefaultConfigFilename)
-		newConfPath := filepath.Join(newHomePath, DefaultConfigFilename)
+		oldConfPath := filepath.Join(oldHomePath, config.DefaultConfigFilename)
+		newConfPath := filepath.Join(newHomePath, config.DefaultConfigFilename)
 		if fileExists(oldConfPath) && !fileExists(newConfPath) {
 			err := os.Rename(oldConfPath, newConfPath)
 			if err != nil {
@@ -135,8 +136,8 @@ func upgradeDataPaths() error {
 		}
 
 		// Move old data directory into new location if needed.
-		oldDataPath := filepath.Join(oldHomePath, DefaultDataDirname)
-		newDataPath := filepath.Join(newHomePath, DefaultDataDirname)
+		oldDataPath := filepath.Join(oldHomePath, config.DefaultDataDirname)
+		newDataPath := filepath.Join(newHomePath, config.DefaultDataDirname)
 		if fileExists(oldDataPath) && !fileExists(newDataPath) {
 			err := os.Rename(oldDataPath, newDataPath)
 			if err != nil {

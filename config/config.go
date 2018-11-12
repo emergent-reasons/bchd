@@ -2,7 +2,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package main
+package config
 
 import (
 	"bufio"
@@ -24,6 +24,7 @@ import (
 	"github.com/gcash/bchd/chaincfg"
 	"github.com/gcash/bchd/connmgr"
 	"github.com/gcash/bchd/database"
+	// register driver(s)
 	_ "github.com/gcash/bchd/database/ffldb"
 	"github.com/gcash/bchd/mempool"
 	"github.com/gcash/bchd/peer"
@@ -382,7 +383,7 @@ func Load() (*Config, []string, *Params, error) {
 	}
 
 	// Create the home directory if it doesn't already exist.
-	funcName := "loadConfig"
+	funcName := "Load"
 	err = os.MkdirAll(DefaultHomeDir, 0700)
 	if err != nil {
 		// Show a nicer error message if it's because a symlink is

@@ -16,6 +16,7 @@ import (
 	"runtime/pprof"
 
 	"github.com/gcash/bchd/blockchain/indexers"
+	"github.com/gcash/bchd/config"
 	"github.com/gcash/bchd/database"
 	"github.com/gcash/bchd/limits"
 	"github.com/gcash/bchd/version"
@@ -30,8 +31,8 @@ const (
 )
 
 var (
-	cfg             *Config
-	activeNetParams *Params
+	cfg             *config.Config
+	activeNetParams *config.Params
 )
 
 // winServiceMain is only invoked on Windows.  It detects when bchd is running
@@ -45,7 +46,7 @@ var winServiceMain func() (bool, error)
 // requested from the service control manager.
 func bchdMain(serverChan chan<- *server) error {
 	// Load configuration and parse command line.
-	tcfg, _, tempNetParams, err := Load()
+	tcfg, _, tempNetParams, err := config.Load()
 	if err != nil {
 		return err
 	}

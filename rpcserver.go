@@ -35,6 +35,7 @@ import (
 	"github.com/gcash/bchd/btcjson"
 	"github.com/gcash/bchd/chaincfg"
 	"github.com/gcash/bchd/chaincfg/chainhash"
+	"github.com/gcash/bchd/config"
 	"github.com/gcash/bchd/database"
 	"github.com/gcash/bchd/mempool"
 	"github.com/gcash/bchd/mining"
@@ -367,7 +368,7 @@ func handleAskWallet(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (
 func handleAddNode(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c := cmd.(*btcjson.AddNodeCmd)
 
-	addr := NormalizeAddress(c.Addr, s.cfg.ChainParams.DefaultPort)
+	addr := config.NormalizeAddress(c.Addr, s.cfg.ChainParams.DefaultPort)
 	var err error
 	switch c.SubCmd {
 	case "add":
@@ -411,7 +412,7 @@ func handleNode(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (inter
 			err = s.cfg.ConnMgr.DisconnectByID(int32(nodeID))
 		} else {
 			if _, _, errP := net.SplitHostPort(c.Target); errP == nil || net.ParseIP(c.Target) != nil {
-				addr = NormalizeAddress(c.Target, params.DefaultPort)
+				addr = config.NormalizeAddress(c.Target, params.DefaultPort)
 				err = s.cfg.ConnMgr.DisconnectByAddr(addr)
 			} else {
 				return nil, &btcjson.RPCError{
@@ -436,7 +437,7 @@ func handleNode(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (inter
 			err = s.cfg.ConnMgr.RemoveByID(int32(nodeID))
 		} else {
 			if _, _, errP := net.SplitHostPort(c.Target); errP == nil || net.ParseIP(c.Target) != nil {
-				addr = NormalizeAddress(c.Target, params.DefaultPort)
+				addr = config.NormalizeAddress(c.Target, params.DefaultPort)
 				err = s.cfg.ConnMgr.RemoveByAddr(addr)
 			} else {
 				return nil, &btcjson.RPCError{
@@ -453,7 +454,7 @@ func handleNode(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (inter
 		}
 
 	case "connect":
-		addr = NormalizeAddress(c.Target, params.DefaultPort)
+		addr = config.NormalizeAddress(c.Target, params.DefaultPort)
 
 		// Default to temporary connections.
 		subCmd := "temp"
