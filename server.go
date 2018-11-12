@@ -3128,3 +3128,29 @@ func mergeCheckpoints(defaultCheckpoints, additional []chaincfg.Checkpoint) []ch
 	sort.Sort(checkpointSorter(checkpoints))
 	return checkpoints
 }
+
+// IsWhitelisted returns whether the IP address is included in the whitelisted
+// networks and IPs.
+func IsWhitelisted(addr net.Addr) bool {
+	if len(cfg.whitelists) == 0 {
+		return false
+	}
+
+	host, _, err := net.SplitHostPort(addr.String())
+	if err != nil {
+		srvrLog.Warnf("Unable to SplitHostPort on '%s': %v", addr, err)
+		return false
+	}
+	ip := net.ParseIP(host)
+	if ip == nil {
+		srvrLog.Warnf("Unable to parse IP '%s'", addr)
+		return false
+	}
+
+	for _, ipnet := range cfg.whitelists {
+		if ipnet.Contains(ip) {
+			return true
+		}
+	}
+	return false
+}

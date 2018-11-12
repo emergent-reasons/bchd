@@ -66,6 +66,12 @@ func bchdMain(serverChan chan<- *server) error {
 		return fmt.Errorf("error initializing logging: %v", err.Error())
 	}
 
+	// Special show command to list supported subsystems and exit.
+	if cfg.DebugLevel == "show" {
+		fmt.Println("Supported subsystems", supportedSubsystems())
+		os.Exit(0)
+	}
+
 	// Get a channel that will be closed when a shutdown signal has been
 	// triggered either from an OS signal such as SIGINT (Ctrl+C) or from
 	// another subsystem such as the RPC server.
@@ -343,4 +349,14 @@ func main() {
 		fmt.Fprintf(os.Stderr, "error running node: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+// filesExists reports whether the named file or directory exists.
+func fileExists(name string) bool {
+	if _, err := os.Stat(name); err != nil {
+		if os.IsNotExist(err) {
+			return false
+		}
+	}
+	return true
 }

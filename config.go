@@ -245,16 +245,6 @@ func normalizeAddresses(addrs []string, defaultPort string) []string {
 	return removeDuplicateAddresses(addrs)
 }
 
-// filesExists reports whether the named file or directory exists.
-func fileExists(name string) bool {
-	if _, err := os.Stat(name); err != nil {
-		if os.IsNotExist(err) {
-			return false
-		}
-	}
-	return true
-}
-
 // newConfigParser returns a new command line flags parser.
 func newConfigParser(cfg *config, so *serviceOptions, options flags.Options) *flags.Parser {
 	parser := flags.NewParser(cfg, options)
@@ -470,12 +460,6 @@ func loadConfig() (*config, []string, *params, error) {
 	// per network in the same fashion as the data directory.
 	cfg.LogDir = cleanAndExpandPath(cfg.LogDir)
 	cfg.LogDir = filepath.Join(cfg.LogDir, netName(netParams))
-
-	// Special show command to list supported subsystems and exit.
-	if cfg.DebugLevel == "show" {
-		fmt.Println("Supported subsystems", supportedSubsystems())
-		os.Exit(0)
-	}
 
 	// Validate database type.
 	if !validDbType(cfg.DbType) {
@@ -1004,30 +988,4 @@ func (cfg *config) BchdLookup(host string) ([]net.IP, error) {
 	}
 
 	return cfg.lookup(host)
-}
-
-// IsWhitelisted returns whether the IP address is included in the whitelisted
-// networks and IPs.
-func IsWhitelisted(addr net.Addr) bool {
-	if len(cfg.whitelists) == 0 {
-		return false
-	}
-
-	host, _, err := net.SplitHostPort(addr.String())
-	if err != nil {
-		srvrLog.Warnf("Unable to SplitHostPort on '%s': %v", addr, err)
-		return false
-	}
-	ip := net.ParseIP(host)
-	if ip == nil {
-		srvrLog.Warnf("Unable to parse IP '%s'", addr)
-		return false
-	}
-
-	for _, ipnet := range cfg.whitelists {
-		if ipnet.Contains(ip) {
-			return true
-		}
-	}
-	return false
 }
