@@ -33,8 +33,10 @@ import (
 )
 
 const (
-	defaultConfigFilename          = "bchd.conf"
-	defaultDataDirname             = "data"
+	// DefaultConfigFilename is used outside config for upgrades in old versions
+	DefaultConfigFilename = "bchd.conf"
+	// DefaultDataDirname is used outside config for upgrades in old versions
+	DefaultDataDirname             = "data"
 	defaultLogLevel                = "info"
 	defaultLogDirname              = "logs"
 	defaultMaxPeers                = 125
@@ -64,13 +66,14 @@ const (
 )
 
 var (
-	defaultHomeDir     = bchutil.AppDataDir("bchd", false)
-	defaultConfigFile  = filepath.Join(defaultHomeDir, defaultConfigFilename)
-	defaultDataDir     = filepath.Join(defaultHomeDir, defaultDataDirname)
+	// DefaultHomeDir is used outside config for upgrades in old versions
+	DefaultHomeDir     = bchutil.AppDataDir("bchd", false)
+	defaultConfigFile  = filepath.Join(DefaultHomeDir, DefaultConfigFilename)
+	defaultDataDir     = filepath.Join(DefaultHomeDir, DefaultDataDirname)
 	knownDbTypes       = database.SupportedDrivers()
-	defaultRPCKeyFile  = filepath.Join(defaultHomeDir, "rpc.key")
-	defaultRPCCertFile = filepath.Join(defaultHomeDir, "rpc.cert")
-	defaultLogDir      = filepath.Join(defaultHomeDir, defaultLogDirname)
+	defaultRPCKeyFile  = filepath.Join(DefaultHomeDir, "rpc.key")
+	defaultRPCCertFile = filepath.Join(DefaultHomeDir, "rpc.cert")
+	defaultLogDir      = filepath.Join(DefaultHomeDir, defaultLogDirname)
 )
 
 // runServiceCommand is only set to a real function on Windows.  It is used
@@ -95,10 +98,10 @@ func maxUint32(a, b uint32) uint32 {
 	return b
 }
 
-// config defines the configuration options for bchd.
+// Config defines the configuration options for bchd.
 //
 // See loadConfig for details on the configuration load process.
-type config struct {
+type Config struct {
 	ShowVersion             bool                  `short:"V" long:"version" description:"Display version information and exit"`
 	ConfigFile              string                `short:"C" long:"configfile" description:"Path to configuration file"`
 	DataDir                 string                `short:"b" long:"datadir" description:"Directory to store data"`
@@ -113,7 +116,7 @@ type config struct {
 	DisableBanning          bool                  `long:"nobanning" description:"Disable banning of misbehaving peers"`
 	BanDuration             time.Duration         `long:"banduration" description:"How long to ban misbehaving peers.  Valid time units are {s, m, h}.  Minimum 1 second"`
 	BanThreshold            uint32                `long:"banthreshold" description:"Maximum allowed ban score before disconnecting and banning misbehaving peers."`
-	Whitelists              []string              `long:"whitelist" description:"Add an IP network or IP that will not be banned. (eg. 192.168.1.0/24 or ::1)"`
+	WhitelistsStr           []string              `long:"whitelist" description:"Add an IP network or IP that will not be banned. (eg. 192.168.1.0/24 or ::1)"`
 	RPCUser                 string                `short:"u" long:"rpcuser" description:"Username for RPC connections"`
 	RPCPass                 string                `short:"P" long:"rpcpass" default-mask:"-" description:"Password for RPC connections"`
 	RPCLimitUser            string                `long:"rpclimituser" description:"Username for limited RPC connections"`
@@ -150,34 +153,35 @@ type config struct {
 	Upnp                    bool                  `long:"upnp" description:"Use UPnP to map our listening port outside of NAT"`
 	ExcessiveBlockSize      uint32                `long:"excessiveblocksize" description:"The maximum size block (in bytes) this node will accept. Cannot be less than 32000000."`
 	MinRelayTxFeeBCH        float64               `long:"minrelaytxfee" description:"The minimum transaction fee in BCH/kB to be considered a non-zero fee."`
-	MinRelayTxFeeSats       bchutil.Amount
-	FreeTxRelayLimit        float64       `long:"limitfreerelay" description:"Limit relay of transactions with no transaction fee to the given amount in thousands of bytes per minute"`
-	NoRelayPriority         bool          `long:"norelaypriority" description:"Do not require free or low-fee transactions to have high priority for relaying"`
-	TrickleInterval         time.Duration `long:"trickleinterval" description:"Minimum time between attempts to send new inventory to a connected peer"`
-	MaxOrphanTxs            int           `long:"maxorphantx" description:"Max number of orphan transactions to keep in memory"`
-	Generate                bool          `long:"generate" description:"Generate (mine) bitcoins using the CPU"`
-	MiningAddrs             []bchutil.Address
-	MiningAddrsStr          []string `long:"miningaddr" description:"Add the specified payment address to the list of addresses to use for generated blocks -- At least one address is required if the generate option is set"`
-	BlockMinSize            uint32   `long:"blockminsize" description:"Mininum block size in bytes to be used when creating a block"`
-	BlockMaxSize            uint32   `long:"blockmaxsize" description:"Maximum block size in bytes to be used when creating a block"`
-	BlockPrioritySize       uint32   `long:"blockprioritysize" description:"Size in bytes for high-priority/low-fee transactions when creating a block"`
-	UserAgentComments       []string `long:"uacomment" description:"Comment to add to the user agent -- See BIP 14 for more information."`
-	NoPeerBloomFilters      bool     `long:"nopeerbloomfilters" description:"Disable bloom filtering support"`
-	NoCFilters              bool     `long:"nocfilters" description:"Disable committed filtering (CF) support"`
-	DropCfIndex             bool     `long:"dropcfindex" description:"Deletes the index used for committed filtering (CF) support from the database on start up and then exits."`
-	SigCacheMaxSize         uint     `long:"sigcachemaxsize" description:"The maximum number of entries in the signature verification cache"`
+	FreeTxRelayLimit        float64               `long:"limitfreerelay" description:"Limit relay of transactions with no transaction fee to the given amount in thousands of bytes per minute"`
+	NoRelayPriority         bool                  `long:"norelaypriority" description:"Do not require free or low-fee transactions to have high priority for relaying"`
+	TrickleInterval         time.Duration         `long:"trickleinterval" description:"Minimum time between attempts to send new inventory to a connected peer"`
+	MaxOrphanTxs            int                   `long:"maxorphantx" description:"Max number of orphan transactions to keep in memory"`
+	Generate                bool                  `long:"generate" description:"Generate (mine) bitcoins using the CPU"`
+	MiningAddrsStr          []string              `long:"miningaddr" description:"Add the specified payment address to the list of addresses to use for generated blocks -- At least one address is required if the generate option is set"`
+	BlockMinSize            uint32                `long:"blockminsize" description:"Mininum block size in bytes to be used when creating a block"`
+	BlockMaxSize            uint32                `long:"blockmaxsize" description:"Maximum block size in bytes to be used when creating a block"`
+	BlockPrioritySize       uint32                `long:"blockprioritysize" description:"Size in bytes for high-priority/low-fee transactions when creating a block"`
+	UserAgentComments       []string              `long:"uacomment" description:"Comment to add to the user agent -- See BIP 14 for more information."`
+	NoPeerBloomFilters      bool                  `long:"nopeerbloomfilters" description:"Disable bloom filtering support"`
+	NoCFilters              bool                  `long:"nocfilters" description:"Disable committed filtering (CF) support"`
+	DropCfIndex             bool                  `long:"dropcfindex" description:"Deletes the index used for committed filtering (CF) support from the database on start up and then exits."`
+	SigCacheMaxSize         uint                  `long:"sigcachemaxsize" description:"The maximum number of entries in the signature verification cache"`
 	UtxoCacheMaxSizeMiB     uint          `long:"utxocachemaxsize" description:"The maximum size in MiB of the UTXO cache"`
-	BlocksOnly              bool     `long:"blocksonly" description:"Do not accept transactions from remote peers."`
-	TxIndex                 bool     `long:"txindex" description:"Maintain a full hash-based transaction index which makes all transactions available via the getrawtransaction RPC"`
-	DropTxIndex             bool     `long:"droptxindex" description:"Deletes the hash-based transaction index from the database on start up and then exits."`
-	AddrIndex               bool     `long:"addrindex" description:"Maintain a full address-based transaction index which makes the searchrawtransactions RPC available"`
-	DropAddrIndex           bool     `long:"dropaddrindex" description:"Deletes the address-based transaction index from the database on start up and then exits."`
-	RelayNonStd             bool     `long:"relaynonstd" description:"Relay non-standard transactions regardless of the default settings for the active network."`
-	RejectNonStd            bool     `long:"rejectnonstd" description:"Reject non-standard transactions regardless of the default settings for the active network."`
+	BlocksOnly              bool                  `long:"blocksonly" description:"Do not accept transactions from remote peers."`
+	TxIndex                 bool                  `long:"txindex" description:"Maintain a full hash-based transaction index which makes all transactions available via the getrawtransaction RPC"`
+	DropTxIndex             bool                  `long:"droptxindex" description:"Deletes the hash-based transaction index from the database on start up and then exits."`
+	AddrIndex               bool                  `long:"addrindex" description:"Maintain a full address-based transaction index which makes the searchrawtransactions RPC available"`
+	DropAddrIndex           bool                  `long:"dropaddrindex" description:"Deletes the address-based transaction index from the database on start up and then exits."`
+	RelayNonStd             bool                  `long:"relaynonstd" description:"Relay non-standard transactions regardless of the default settings for the active network."`
+	RejectNonStd            bool                  `long:"rejectnonstd" description:"Reject non-standard transactions regardless of the default settings for the active network."`
+	MinRelayTxFeeSats       bchutil.Amount
+	MiningAddrs             []bchutil.Address
+	MaxOrphanTxSize         int
+	Whitelists              []*net.IPNet
 	lookup                  func(string) ([]net.IP, error)
 	oniondial               func(string, string, time.Duration) (net.Conn, error)
 	dial                    func(string, string, time.Duration) (net.Conn, error)
-	whitelists              []*net.IPNet
 }
 
 // serviceOptions defines the configuration options for the daemon as a service on
@@ -191,7 +195,7 @@ type serviceOptions struct {
 func cleanAndExpandPath(path string) string {
 	// Expand initial ~ to OS specific home directory.
 	if strings.HasPrefix(path, "~") {
-		homeDir := filepath.Dir(defaultHomeDir)
+		homeDir := filepath.Dir(DefaultHomeDir)
 		path = strings.Replace(path, "~", homeDir, 1)
 	}
 
@@ -225,9 +229,9 @@ func removeDuplicateAddresses(addrs []string) []string {
 	return result
 }
 
-// normalizeAddress returns addr with the passed default port appended if
+// NormalizeAddress returns addr with the passed default port appended if
 // there is not already a port specified.
-func normalizeAddress(addr, defaultPort string) string {
+func NormalizeAddress(addr, defaultPort string) string {
 	_, _, err := net.SplitHostPort(addr)
 	if err != nil {
 		return net.JoinHostPort(addr, defaultPort)
@@ -239,14 +243,14 @@ func normalizeAddress(addr, defaultPort string) string {
 // normalized with the given default port, and all duplicates removed.
 func normalizeAddresses(addrs []string, defaultPort string) []string {
 	for i, addr := range addrs {
-		addrs[i] = normalizeAddress(addr, defaultPort)
+		addrs[i] = NormalizeAddress(addr, defaultPort)
 	}
 
 	return removeDuplicateAddresses(addrs)
 }
 
 // newConfigParser returns a new command line flags parser.
-func newConfigParser(cfg *config, so *serviceOptions, options flags.Options) *flags.Parser {
+func newConfigParser(cfg *Config, so *serviceOptions, options flags.Options) *flags.Parser {
 	parser := flags.NewParser(cfg, options)
 	if runtime.GOOS == "windows" {
 		parser.AddGroup("Service Options", "Service Options", so)
@@ -254,7 +258,7 @@ func newConfigParser(cfg *config, so *serviceOptions, options flags.Options) *fl
 	return parser
 }
 
-// loadConfig initializes and parses the config using a config file and command
+// Load initializes and parses the config using a config file and command
 // line options.
 //
 // The configuration proceeds as follows:
@@ -266,9 +270,9 @@ func newConfigParser(cfg *config, so *serviceOptions, options flags.Options) *fl
 // The above results in bchd functioning properly without any config settings
 // while still allowing the user to override settings with config files and
 // command line options.  Command line options always take precedence.
-func loadConfig() (*config, []string, *params, error) {
+func Load() (*Config, []string, *Params, error) {
 	// Default config.
-	cfg := config{
+	cfg := Config{
 		ConfigFile:              defaultConfigFile,
 		DebugLevel:              defaultLogLevel,
 		MaxPeers:                defaultMaxPeers,
@@ -292,6 +296,7 @@ func loadConfig() (*config, []string, *params, error) {
 		BlockMaxSize:            defaultBlockMaxSize,
 		BlockPrioritySize:       mempool.DefaultBlockPrioritySize,
 		MaxOrphanTxs:            defaultMaxOrphanTransactions,
+		MaxOrphanTxSize:         defaultMaxOrphanTxSize,
 		SigCacheMaxSize:         defaultSigCacheMaxSize,
 		UtxoCacheMaxSizeMiB:     defaultUtxoCacheMaxSizeMiB,
 		Generate:                defaultGenerate,
@@ -378,7 +383,7 @@ func loadConfig() (*config, []string, *params, error) {
 
 	// Create the home directory if it doesn't already exist.
 	funcName := "loadConfig"
-	err = os.MkdirAll(defaultHomeDir, 0700)
+	err = os.MkdirAll(DefaultHomeDir, 0700)
 	if err != nil {
 		// Show a nicer error message if it's because a symlink is
 		// linked to a directory that does not exist (probably because
@@ -495,9 +500,9 @@ func loadConfig() (*config, []string, *params, error) {
 	// Validate any given whitelisted IP addresses and networks.
 	if len(cfg.Whitelists) > 0 {
 		var ip net.IP
-		cfg.whitelists = make([]*net.IPNet, 0, len(cfg.Whitelists))
+		cfg.Whitelists = make([]*net.IPNet, 0, len(cfg.WhitelistsStr))
 
-		for _, addr := range cfg.Whitelists {
+		for _, addr := range cfg.WhitelistsStr {
 			_, ipnet, err := net.ParseCIDR(addr)
 			if err != nil {
 				ip = net.ParseIP(addr)
@@ -520,7 +525,7 @@ func loadConfig() (*config, []string, *params, error) {
 					Mask: net.CIDRMask(bits, bits),
 				}
 			}
-			cfg.whitelists = append(cfg.whitelists, ipnet)
+			cfg.Whitelists = append(cfg.Whitelists, ipnet)
 		}
 	}
 
@@ -962,12 +967,12 @@ func createDefaultConfigFile(destinationPath string) error {
 	return nil
 }
 
-// bchdDial connects to the address on the named network using the appropriate
+// BchdDial connects to the address on the named network using the appropriate
 // dial function depending on the address and configuration options.  For
 // example, .onion addresses will be dialed using the onion specific proxy if
 // one was specified, but will otherwise use the normal dial function (which
 // could itself use a proxy or not).
-func bchdDial(addr net.Addr) (net.Conn, error) {
+func (cfg *Config) BchdDial(addr net.Addr) (net.Conn, error) {
 	if strings.Contains(addr.String(), ".onion:") {
 		return cfg.oniondial(addr.Network(), addr.String(),
 			defaultConnectTimeout)
@@ -982,7 +987,7 @@ func bchdDial(addr net.Addr) (net.Conn, error) {
 //
 // Any attempt to resolve a tor address (.onion) will return an error since they
 // are not intended to be resolved outside of the tor proxy.
-func (cfg *config) BchdLookup(host string) ([]net.IP, error) {
+func (cfg *Config) BchdLookup(host string) ([]net.IP, error) {
 	if strings.HasSuffix(host, ".onion") {
 		return nil, fmt.Errorf("attempt to resolve tor address %s", host)
 	}

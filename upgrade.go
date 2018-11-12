@@ -109,7 +109,7 @@ func upgradeDBPaths() error {
 func upgradeDataPaths() error {
 	// No need to migrate if the old and new home paths are the same.
 	oldHomePath := oldBchdHomeDir()
-	newHomePath := defaultHomeDir
+	newHomePath := DefaultHomeDir
 	if oldHomePath == newHomePath {
 		return nil
 	}
@@ -125,8 +125,8 @@ func upgradeDataPaths() error {
 		}
 
 		// Move old bchd.conf into new location if needed.
-		oldConfPath := filepath.Join(oldHomePath, defaultConfigFilename)
-		newConfPath := filepath.Join(newHomePath, defaultConfigFilename)
+		oldConfPath := filepath.Join(oldHomePath, DefaultConfigFilename)
+		newConfPath := filepath.Join(newHomePath, DefaultConfigFilename)
 		if fileExists(oldConfPath) && !fileExists(newConfPath) {
 			err := os.Rename(oldConfPath, newConfPath)
 			if err != nil {
@@ -135,8 +135,8 @@ func upgradeDataPaths() error {
 		}
 
 		// Move old data directory into new location if needed.
-		oldDataPath := filepath.Join(oldHomePath, defaultDataDirname)
-		newDataPath := filepath.Join(newHomePath, defaultDataDirname)
+		oldDataPath := filepath.Join(oldHomePath, DefaultDataDirname)
+		newDataPath := filepath.Join(newHomePath, DefaultDataDirname)
 		if fileExists(oldDataPath) && !fileExists(newDataPath) {
 			err := os.Rename(oldDataPath, newDataPath)
 			if err != nil {

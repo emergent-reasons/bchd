@@ -2701,7 +2701,7 @@ func newServer(listenAddrs []string, db database.DB, chainParams *chaincfg.Param
 			AcceptNonStd:         cfg.RelayNonStd,
 			FreeTxRelayLimit:     cfg.FreeTxRelayLimit,
 			MaxOrphanTxs:         cfg.MaxOrphanTxs,
-			MaxOrphanTxSize:      defaultMaxOrphanTxSize,
+			MaxOrphanTxSize:      cfg.MaxOrphanTxSize,
 			MaxSigOpPerTx:        blockchain.MaxTransactionSigOps,
 			MinRelayTxFee:        cfg.MinRelayTxFeeSats,
 			MaxTxVersion:         2,
@@ -2814,7 +2814,7 @@ func newServer(listenAddrs []string, db database.DB, chainParams *chaincfg.Param
 		OnAccept:       s.inboundPeerConnected,
 		RetryDuration:  connectionRetryInterval,
 		TargetOutbound: uint32(targetOutbound),
-		Dial:           bchdDial,
+		Dial:           cfg.BchdDial,
 		OnConnection:   s.outboundPeerConnected,
 		GetNewAddress:  newAddressFunc,
 	})
@@ -3132,7 +3132,7 @@ func mergeCheckpoints(defaultCheckpoints, additional []chaincfg.Checkpoint) []ch
 // IsWhitelisted returns whether the IP address is included in the whitelisted
 // networks and IPs.
 func IsWhitelisted(addr net.Addr) bool {
-	if len(cfg.whitelists) == 0 {
+	if len(cfg.Whitelists) == 0 {
 		return false
 	}
 
@@ -3147,7 +3147,7 @@ func IsWhitelisted(addr net.Addr) bool {
 		return false
 	}
 
-	for _, ipnet := range cfg.whitelists {
+	for _, ipnet := range cfg.Whitelists {
 		if ipnet.Contains(ip) {
 			return true
 		}
